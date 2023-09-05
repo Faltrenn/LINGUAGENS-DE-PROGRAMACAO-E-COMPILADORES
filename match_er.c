@@ -35,8 +35,12 @@ int main(void) {
         }
     }
 
-    char *string = "59318000";
-    printf("State: %d\n", match(string, 0, 10, a));
+    char *string = malloc(10 * sizeof(char));
+    
+    printf("Digite o CEP: ");
+    fgets(string, 10, stdin);
+
+    printf("CEP: %s\nState: %d\n", string, match(string, 0, 10, a));
     return 0;
 }
 
