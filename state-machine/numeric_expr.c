@@ -72,14 +72,15 @@ struct node* create_node(char symbol, unsigned int state, struct node *next) {
 }
 
 void make_transitions(struct afd *a) {
-    for(int i = 0; i < a->n; i++)
-        for(char c = '0'; c <= '9'; c++)
-            a->transitions[i] = create_node(c, 1, a->transitions[i]);
+    for(char c = '0'; c <= '9'; c++)
+        a->transitions[0] = create_node(c, 1, a->transitions[0]);
     a->transitions[0] = create_node('-', 2, a->transitions[0]);
-    
-    a->transitions[1] = create_node('*', 2, a->transitions[1]->next);
-    for(char c = '+'; c <= '/'; c+=2)
+
+    a->transitions[1] = create_node('*', 2, a->transitions[0]);
+    for(char c = '+'; c <= '/'; c+=4)
         a->transitions[1] = create_node(c, 2, a->transitions[1]);
+    
+    a->transitions[2] = a->transitions[0]->next;
 }
 
 void free_node(struct node *node) {
@@ -89,9 +90,7 @@ void free_node(struct node *node) {
 }
 
 void free_afd(struct afd *a) {
-    for(int i = 0; i < a->n; i++) {
-        free_node(a->transitions[i]);
-    }
+    free_node(a->transitions[1]);
     free(a->transitions);
     free(a);
 }
