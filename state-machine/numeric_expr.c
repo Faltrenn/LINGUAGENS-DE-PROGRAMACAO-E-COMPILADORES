@@ -13,7 +13,7 @@ struct afd {
     struct node **transitions;
 };
 
-char match(char *string, struct afd *a, unsigned int final);
+char match(const char *string, struct afd *a, unsigned int final);
 
 void create_afd(unsigned int n, struct afd *a);
 
@@ -32,14 +32,14 @@ int main(int argc, const char * argv[]) {
     
     make_transitions(a);
     
-    printf("%c\n", match("-35555", a, 1));
+    printf("%c\n", match(argv[1], a, 1));
     
     free_afd(a);
     
     return 0;
 }
 
-char match(char* string, struct afd *a, unsigned int final) {
+char match(const char* string, struct afd *a, unsigned int final) {
     unsigned int s = 0;
     for(int i = 0; string[i] != '\0'; i++) {
         for(struct node *node = a->transitions[s]; node != NULL; node = node->next) {
