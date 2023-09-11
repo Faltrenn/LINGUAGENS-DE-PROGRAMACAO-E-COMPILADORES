@@ -32,7 +32,7 @@ int main(int argc, const char * argv[]) {
     
     make_transitions(a);
     
-    printf("%c\n", match("35555*", a, 1));
+    printf("%c\n", match("-35555", a, 1));
     
     free_afd(a);
     
@@ -75,7 +75,7 @@ void make_transitions(struct afd *a) {
     for(int i = 0; i < a->n; i++)
         for(char c = '0'; c <= '9'; c++)
             a->transitions[i] = create_node(c, 1, a->transitions[i]);
-    a->transitions[0] = create_node('-', 1, a->transitions[0]);
+    a->transitions[0] = create_node('-', 2, a->transitions[0]);
     
     a->transitions[1] = create_node('*', 2, a->transitions[1]->next);
     for(char c = '+'; c <= '/'; c+=2)
