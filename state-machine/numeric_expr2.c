@@ -4,8 +4,11 @@
 
 struct node {
     char symbol;
+    char add;
+    char remove;
     unsigned int state;
     struct node *next;
+
 };
 
 struct afd {
@@ -22,7 +25,7 @@ char match(const char *string, struct afd *a, unsigned int final);
 
 void create_afd(unsigned int n, struct afd *a);
 
-struct node* create_node(char symbol, unsigned int state, struct node *next);
+struct node* create_node(char symbol, char add, char remove, unsigned int state, struct node *next);
 
 void make_transitions(struct afd *a);
 
@@ -32,7 +35,7 @@ void free_node(struct node *node);
 
 struct memory* add_memory(char symbol, struct memory *next);
 
-int remove_memory(struct memory *m, char symbol);
+struct memory* remove_memory(struct memory *m, char symbol);
 
 
 int main(int argc, const char * argv[]) {
@@ -51,19 +54,19 @@ int main(int argc, const char * argv[]) {
 char match(const char* string, struct afd *a, unsigned int final) {
     unsigned int s = 0;
     struct memory *m = malloc(sizeof(struct memory));
-    m->symbol = '\0';
-    m->next = NULL;
+    m = NULL;
 
     for(int i = 0; string[i] != '\0'; i++) {
         for(struct node *node = a->transitions[s]; node != NULL; node = node->next) {
             if(string[i] == node->symbol) {
                 char c = string[i];
-                if(c == '(' || c == '[' || c == '{') {
-                    add_memory(c, m);
-                } else if(c == ')' || c == ']' || c == '}') {
-                    if(!remove_memory(m, c)) {
+                if(node->add != '\0') {
+                    m = add_memory(c, m);
+                } else if (node->remove != '\0') {
+                    if(m == NULL) {
                         return 'f';
                     }
+                    m = remove_memory(m, node->remove);
                 }
                 s = node->state;
                 break;
@@ -72,32 +75,26 @@ char match(const char* string, struct afd *a, unsigned int final) {
             }
         }
     }
-    return (s == final && m->symbol == '\0') ? 's' : 'f';
-}
-
-int remove_memory(struct memory *m, char symbol) {
-    if(m->symbol == symbol-1 || m->symbol == symbol-2) {
-        if(m->next == NULL) {
-            m->symbol = '\0';
-            return 1;
-        }
-        struct memory *aux = m;
-        m = m->next;
-        free(aux);
-        return 1;
-    }
-    return 0;
+    return (s == final && m == NULL) ? 's' : 'f';
 }
 
 struct memory* add_memory(char symbol, struct memory *next) {
-    if(next->symbol == '\0') {
-        next->symbol = symbol;
-        return next;
-    }
     struct memory *m = malloc(sizeof(struct memory));
     m->symbol = symbol;
     m->next = next;
     return m;
+}
+
+struct memory* remove_memory(struct memory *m, char symbol) {
+    if(m != NULL) {
+        if(m->symbol == symbol) {
+            struct memory *aux = m;
+            m = m->next;
+            free(aux);
+            return m;
+        }
+    }
+    return NULL;
 }
 
 void create_afd(unsigned int n, struct afd *a) {
@@ -108,9 +105,11 @@ void create_afd(unsigned int n, struct afd *a) {
     }
 }
 
-struct node* create_node(char symbol, unsigned int state, struct node *next) {
+struct node* create_node(char symbol, char add, char remove, unsigned int state, struct node *next) {
     struct node *n = malloc(sizeof(struct node));
     n->symbol = symbol;
+    n->add = add;
+    n->remove = remove;
     n->state = state;
     n->next = next;
     return n;
@@ -119,29 +118,29 @@ struct node* create_node(char symbol, unsigned int state, struct node *next) {
 void make_transitions(struct afd *a) {
     for(int i = 0; i < 4; i++)
         for(char c = '0'; c <= '9'; c++)
-            a->transitions[i] = create_node(c, 1, a->transitions[i]);
+            a->transitions[i] = create_node(c, '\0', '\0', 1, a->transitions[i]);
     
-    a->transitions[0] = create_node('-', 2, a->transitions[0]);
-    a->transitions[0] = create_node('(', 3, a->transitions[0]);
-    a->transitions[0] = create_node('[', 3, a->transitions[0]);
-    a->transitions[0] = create_node('{', 3, a->transitions[0]);
+    a->transitions[0] = create_node('-', '\0', '\0', 2, a->transitions[0]);
+    a->transitions[0] = create_node('(', '(', '\0', 3, a->transitions[0]);
+    a->transitions[0] = create_node('[', '[', '\0', 3, a->transitions[0]);
+    a->transitions[0] = create_node('{', '{', '\0', 3, a->transitions[0]);
 
-    a->transitions[1] = create_node('*', 2, a->transitions[1]);
+    a->transitions[1] = create_node('*', '\0', '\0', 2, a->transitions[1]);
     for(char c = '+'; c <= '/'; c+=2)
-        a->transitions[1] = create_node(c, 2, a->transitions[1]);
+        a->transitions[1] = create_node(c, '\0', '\0', 2, a->transitions[1]);
     
-    a->transitions[1] = create_node(')', 1, a->transitions[1]);
-    a->transitions[1] = create_node(']', 1, a->transitions[1]);
-    a->transitions[1] = create_node('}', 1, a->transitions[1]);
+    a->transitions[1] = create_node(')', '\0', '(', 1, a->transitions[1]);
+    a->transitions[1] = create_node(']', '\0', '(', 1, a->transitions[1]);
+    a->transitions[1] = create_node('}', '\0', '(', 1, a->transitions[1]);
 
-    a->transitions[2] = create_node('(', 3, a->transitions[2]);
-    a->transitions[2] = create_node('[', 3, a->transitions[2]);
-    a->transitions[2] = create_node('{', 3, a->transitions[2]);
+    a->transitions[2] = create_node('(', '(', '\0', 3, a->transitions[2]);
+    a->transitions[2] = create_node('[', '(', '\0', 3, a->transitions[2]);
+    a->transitions[2] = create_node('{', '(', '\0', 3, a->transitions[2]);
 
-    a->transitions[3] = create_node('-', 2, a->transitions[3]);
-    a->transitions[3] = create_node('(', 3, a->transitions[3]);
-    a->transitions[3] = create_node('[', 3, a->transitions[3]);
-    a->transitions[3] = create_node('{', 3, a->transitions[3]);
+    a->transitions[3] = create_node('-', '\0', '\0', 2, a->transitions[3]);
+    a->transitions[3] = create_node('(', '(', '\0', 3, a->transitions[3]);
+    a->transitions[3] = create_node('[', '(', '\0', 3, a->transitions[3]);
+    a->transitions[3] = create_node('{', '(', '\0', 3, a->transitions[3]);
 }
 
 void free_node(struct node *node) {
